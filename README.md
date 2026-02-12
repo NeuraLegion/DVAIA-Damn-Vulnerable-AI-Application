@@ -26,10 +26,14 @@ The easiest way to run DVAIA with all dependencies:
 ```bash
 # Clone the repository
 git clone https://github.com/genbounty/DVAIA.git
+- OR
+git clone git@github.com:genbounty/DVAIA.git
 cd DVAIA
 
 # Option A: Use the convenience script
 ./run_docker.sh
+- OR
+sudo ./run-docker.sh
 
 # Option B: Use docker compose directly
 docker compose up -d --build
@@ -635,6 +639,10 @@ Repeat penalty: 1.0
 ## 🐛 Troubleshooting
 
 ### Common Issues
+**"Permission denied"**
+```bash
+use sudo when starting docker
+```
 
 **"curl_cffi not installed"**
 ```bash
