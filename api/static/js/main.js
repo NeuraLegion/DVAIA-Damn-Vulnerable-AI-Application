@@ -218,7 +218,6 @@ function updateSessionUI(data) {
   if (user) {
     userLabel.textContent = "Logged in as " + user.username + (user.mfa_verified ? "" : " (MFA required)");
     btnLogout.style.display = "inline-block";
-    btnLogin.style.display = "none";
     document.getElementById("panel_login").classList.remove("active");
     if (!user.mfa_verified) {
       document.querySelectorAll("#main_body .panel").forEach(p => p.classList.remove("active"));
@@ -230,7 +229,6 @@ function updateSessionUI(data) {
   } else {
     userLabel.textContent = "";
     btnLogout.style.display = "none";
-    btnLogin.style.display = "inline-block";
     document.getElementById("panel_login").classList.remove("active");
     document.getElementById("panel_mfa").classList.remove("active");
   }

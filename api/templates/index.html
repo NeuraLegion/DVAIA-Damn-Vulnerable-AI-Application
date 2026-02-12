@@ -8,17 +8,10 @@
 </head>
 <body>
   <div id="header">
-    <h1>DVAIA - Damn Vulnerable AI Application</h1>
+    <h1>DVAIA - Damn Vulnerable AI Application <small class="poweredby">Powered by Genbounty</small></h1>
     <div id="session_info">
       <span id="user_label" class="user"></span>
       <button type="button" id="btn_logout" style="display:none;">Logout</button>
-    </div>
-  </div>
-
-  <div id="warning-banner">
-    <div class="warning-content">
-      <span class="warning-icon">⚠️</span>
-      <span class="warning-text"><strong>INTENTIONALLY VULNERABLE APPLICATION</strong> - For security testing and education only. Do not use in production or with real data.</span>
     </div>
   </div>
 
@@ -35,6 +28,12 @@
         <li data-panel="rag"><a href="#rag">RAG poisoning</a></li>
         <li data-panel="template"><a href="#template">Template Injection</a></li>
       </ul>
+
+      <div id="genbounty-promo" class="promo-box">
+        <p class="promo-text">Want to become a professional AI Safety Tester?</p>
+        <img src="{{ url_for('static', filename='images/Genbounty.png') }}" alt="Genbounty" class="promo-logo">
+        <a href="https://genbounty.com/signup" target="_blank" rel="noopener noreferrer" class="promo-button">Sign up at Genbounty</a>
+      </div>
     </div>
 
     <div id="main_body">
