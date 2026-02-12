@@ -19,40 +19,71 @@ DVAIA is similar to DVWA (Damn Vulnerable Web Application) but designed specific
 
 ## 🚀 Quick Start
 
-### Start the Application
+### Option 1: Docker Compose (Recommended)
+
+The easiest way to run DVAIA with all dependencies:
 
 ```bash
-# Ensure dependencies installed
-pip install -r requirements.txt
+# Clone the repository
+git clone https://github.com/genbounty/DVAIA.git
+cd DVAIA
 
-# Start Ollama (if not running)
-ollama serve
+# Option A: Use the convenience script
+./run_docker.sh
 
-# Pull models
-ollama pull llama3.2
-ollama pull nomic-embed-text  # For RAG features
+# Option B: Use docker compose directly
+docker compose up -d --build
 
-# Start the server (development)
-python -m api
+# Models will auto-download on first start (2-3 minutes)
+# Watch progress:
+docker compose logs -f ollama
 
-# Or with Gunicorn (production-ready)
-gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 api.server:app
-
-# Open in browser
+# Access the application
 # http://127.0.0.1:5000
 ```
 
-### Test Credentials
+**Stop the application:**
 
-**Login:**
-- Username: `test`
-- Password: `test`
+```bash
+docker compose down  # Stops and clears all data
+```
 
-**MFA:**
-- Code: `123456`
-- Backup codes: `backup1`, `backup2`, `backup3`
+### Option 2: Local Development (Python venv)
 
----
+For development or if you prefer running locally:
+
+```bash
+# 1. Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Start Ollama (separate terminal)
+ollama serve
+
+# 4. Pull required models
+ollama pull llama3.2
+ollama pull nomic-embed-text  # For RAG features
+
+# 5. Start Qdrant (separate terminal)
+docker run -p 6333:6333 qdrant/qdrant
+
+# 6. Start the Flask app
+python -m api
+
+# Access the application
+# http://127.0.0.1:5000
+```
+
+**For production deployment:**
+
+```bash
+# Use Gunicorn instead of development server
+gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 api.server:app
+```
+
 
 ## 🖥️ Interface Overview
 
