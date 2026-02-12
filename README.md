@@ -54,7 +54,26 @@ docker compose down  # Stops and clears all data
 
 ### Option 2: Local Development (Python venv)
 
-For development or if you prefer running locally:
+**Important - Option 1 above is one command install.**
+Option 2 is extra work as you will need to manually install ollama and qdrant using docker. Option 1 above is one command install. Use option 1 unless you want granular control over the infrastructure.
+ **Important**
+
+For development or if you prefer running the Gunicorn app locally. You need **Ollama** and **Qdrant** available—either installed on the host or run via Docker (see below).
+
+**Prerequisites:**
+- **Ollama** must be running. Install from [ollama.com](https://ollama.com) if not already installed.
+- **Qdrant** can run in Docker: `docker run -p 6333:6333 qdrant/qdrant`
+
+**If you don't have Ollama installed:** Run only the Ollama and Qdrant containers, then the Flask app in venv:
+
+```bash
+# Terminal 1: Start Ollama + Qdrant (no need to install Ollama on your machine)
+docker compose up ollama qdrant -d
+
+# Wait for models to pull, then set OLLAMA_HOST and run the app (see below)
+```
+
+**Full local setup (Ollama installed on your machine):**
 
 ```bash
 # 1. Create and activate virtual environment
@@ -64,7 +83,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Start Ollama (separate terminal)
+# 3. Start Ollama (separate terminal) — requires Ollama installed: https://ollama.com
 ollama serve
 
 # 4. Pull required models
@@ -74,12 +93,16 @@ ollama pull nomic-embed-text  # For RAG features
 # 5. Start Qdrant (separate terminal)
 docker run -p 6333:6333 qdrant/qdrant
 
-# 6. Start the Flask app
+# 6. Start the Flask app (set OLLAMA_HOST if Ollama runs in Docker)
+# export OLLAMA_HOST=http://localhost:11434   # default when Ollama is local
+# export OLLAMA_HOST=http://127.0.0.1:11434   # use this if you ran "docker compose up ollama"
 python -m api
 
 # Access the application
 # http://127.0.0.1:5000
 ```
+
+**Hybrid (Ollama in Docker, Flask in venv):** Run `docker compose up ollama qdrant -d`, then in your venv set `OLLAMA_HOST=http://127.0.0.1:11434` and start the app with `python -m api`.
 
 **For production deployment:**
 
