@@ -56,9 +56,8 @@ docker compose down  # Stops and clears all data
 
 **Important - Option 1 above is one command install.**
 Option 2 is extra work as you will need to manually install ollama and qdrant using docker. Option 1 above is one command install. Use option 1 unless you want granular control over the infrastructure.
- **Important**
 
-For development or if you prefer running the Gunicorn app locally. You need **Ollama** and **Qdrant** available—either installed on the host or run via Docker (see below).
+For development or if you prefer running the Gunicorn app without Docker. You need **Ollama** and **Qdrant** available—either installed on the host or run via Docker (see below).
 
 **Prerequisites:**
 - **Ollama** must be running. Install from [ollama.com](https://ollama.com) if not already installed.
