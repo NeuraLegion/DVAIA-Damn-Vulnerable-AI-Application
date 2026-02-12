@@ -1035,7 +1035,7 @@ For true multimodal testing, use the payload files with models that support file
 
 ## 📄 License
 
-[Specify your license here]
+Free to use responsibly.
 
 ---
 
@@ -1067,16 +1067,3 @@ Built with:
 - [curl_cffi](https://github.com/yifeikong/curl_cffi) - Browser-like requests
 - [ReportLab](https://www.reportlab.com/) - PDF generation
 - [Pillow](https://python-pillow.org/) - Image manipulation
-
----
-
-## 🚀 Next Steps
-
-1. **Start the app**: `python -m api`
-2. **Open browser**: http://127.0.0.1:5000
-3. **Try Direct Injection**: Test a simple jailbreak
-4. **Generate payloads**: Create malicious PDFs/images
-5. **Explore tutorials**: Follow the attack scenarios above
-6. **Read main README**: Learn about automated testing with CLI
-
-**Ready to hack (ethically)!** 🛡️
