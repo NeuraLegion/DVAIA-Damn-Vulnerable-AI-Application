@@ -463,6 +463,200 @@ document.getElementById("send_web").addEventListener("click", async () => {
   }
 });
 
+// Agentic: multi-round conversation state
+let agenticMessages = [];
+let agenticThinking = "";
+let agenticLastToolCalls = [];  // tool names used in the last turn (for summary)
+let agenticModelIdCached = null;  // from /api/models agentic_model (env AGENTIC_MODEL)
+
+async function getAgenticModelId() {
+  if (agenticModelIdCached) return agenticModelIdCached;
+  try {
+    const r = await fetch(API + "/models", { credentials: "include" });
+    const data = await r.json().catch(() => ({}));
+    agenticModelIdCached = data.agentic_model || "qwen3:0.6b";
+  } catch (_) {
+    agenticModelIdCached = "qwen3:0.6b";
+  }
+  return agenticModelIdCached;
+}
+
+function parseThinkingIntoSteps(thinkingText) {
+  if (!thinkingText || !thinkingText.trim()) return [];
+  const steps = [];
+  const blocks = thinkingText.split(/\s*---\s*Step\s+\d+\s*---\s*/i).filter(B => B.trim());
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i].trim();
+    const stepNum = i + 1;
+    let reasoning = "";
+    let thought = "";
+    const actions = [];
+    const lines = block.split("\n");
+    let section = "";
+    let currentAction = null;
+    for (let j = 0; j < lines.length; j++) {
+      const line = lines[j];
+      if (line.startsWith("Reasoning (CoT):")) {
+        section = "reasoning";
+        continue;
+      }
+      if (line.startsWith("Thought:")) {
+        section = "thought";
+        thought = line.slice(7).trim();
+        continue;
+      }
+      if (line.startsWith("Action:")) {
+        if (currentAction) actions.push(currentAction);
+        currentAction = { name: line.slice(7).trim(), input: "", observation: "" };
+        section = "action";
+        continue;
+      }
+      if (line.startsWith("Action Input:")) {
+        if (currentAction) currentAction.input = line.slice(12).trim();
+        continue;
+      }
+      if (line.startsWith("Observation:")) {
+        section = "observation";
+        if (currentAction) currentAction.observation = line.slice(12).trim();
+        continue;
+      }
+      if (section === "reasoning") reasoning += (reasoning ? "\n" : "") + line;
+      else if (section === "observation" && currentAction) currentAction.observation += (currentAction.observation ? "\n" : "") + line;
+    }
+    if (currentAction) actions.push(currentAction);
+    steps.push({ stepNum, reasoning, thought, actions });
+  }
+  return steps;
+}
+
+function renderAgenticConversation() {
+  const container = document.getElementById("agentic_conversation");
+  if (!container) return;
+  if (agenticMessages.length === 0) {
+    container.innerHTML = "Conversation will appear here. Send a message to start.";
+    container.classList.remove("has-rounds");
+    return;
+  }
+  container.classList.add("has-rounds");
+  let html = "";
+  for (let i = 0; i < agenticMessages.length; i++) {
+    const msg = agenticMessages[i];
+    const isLast = i === agenticMessages.length - 1;
+    const showThinking = isLast && msg.role === "assistant" && agenticThinking;
+    if (msg.role === "user") {
+      html += '<div class="agentic-round"><div class="agentic-msg-user"><div class="agentic-role">User</div>' + escapeHtml(msg.content) + "</div></div>";
+    } else {
+      html += '<div class="agentic-round"><div class="agentic-msg-assistant"><div class="agentic-role">Assistant</div>' + escapeHtml(msg.content || "");
+      if (isLast && msg.role === "assistant" && agenticLastToolCalls && agenticLastToolCalls.length > 0) {
+        html += '<div class="agentic-tools-used">Tools used: ' + escapeHtml(agenticLastToolCalls.join(", ")) + '</div>';
+      }
+      if (showThinking) {
+        const steps = parseThinkingIntoSteps(agenticThinking);
+        const stepId = "agentic_steps_" + Date.now();
+        html += '<div class="agentic-thinking-toggle" data-toggle="' + stepId + '">▼ Show thinking (' + steps.length + " step(s))</div>";
+        html += '<div id="' + stepId + '" class="agentic-thinking-steps" style="display:none;">';
+        steps.forEach(function(s) {
+          html += '<div class="agentic-step-block"><div class="agentic-step-title">Step ' + s.stepNum + '</div>';
+          if (s.reasoning) html += '<div class="agentic-step-reasoning">Reasoning (CoT): ' + escapeHtml(s.reasoning) + '</div>';
+          if (s.thought) html += '<div class="agentic-step-thought">Thought: ' + escapeHtml(s.thought) + '</div>';
+          s.actions.forEach(function(a) {
+            html += '<div class="agentic-step-action">Action: ' + escapeHtml(a.name) + '</div>';
+            if (a.input) html += '<div class="agentic-step-action">Action Input: ' + escapeHtml(a.input) + '</div>';
+            if (a.observation) html += '<div class="agentic-step-observation">Observation: ' + escapeHtml(a.observation) + '</div>';
+          });
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+      html += "</div></div>";
+    }
+  }
+  container.innerHTML = html;
+  container.scrollTop = container.scrollHeight;
+  container.querySelectorAll(".agentic-thinking-toggle").forEach(function(el) {
+    el.addEventListener("click", function() {
+      const target = document.getElementById(el.getAttribute("data-toggle"));
+      if (!target) return;
+      if (target.style.display === "none") {
+        target.style.display = "block";
+        el.textContent = el.textContent.replace("▼", "▲").replace("Show", "Hide");
+      } else {
+        target.style.display = "none";
+        el.textContent = el.textContent.replace("▲", "▼").replace("Hide", "Show");
+      }
+    });
+  });
+}
+
+function getAgenticToolNames() {
+  const checked = document.querySelectorAll(".agentic-tool-cb:checked");
+  const all = document.querySelectorAll(".agentic-tool-cb");
+  if (checked.length === 0 || checked.length === all.length) return null;  // all or none = use default (all)
+  return Array.from(checked).map(el => el.value);
+}
+
+document.querySelectorAll(".agentic-scenario-btn").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    const promptEl = document.getElementById("prompt_agentic");
+    if (promptEl) promptEl.value = btn.getAttribute("data-prompt") || "";
+  });
+});
+
+document.getElementById("send_agentic").addEventListener("click", async () => {
+  const prompt = document.getElementById("prompt_agentic").value.trim();
+  if (!prompt) return;
+  setLoading("output_agentic", "send_agentic", true);
+  appendTerminalLine("Agentic chat request", "muted");
+  const modelId = await getAgenticModelId();
+  const toolNames = getAgenticToolNames();
+  const maxSteps = parseInt(document.getElementById("agentic_max_steps") && document.getElementById("agentic_max_steps").value, 10) || 15;
+  const timeout = parseInt(document.getElementById("agentic_timeout") && document.getElementById("agentic_timeout").value, 10) || 120;
+  const body = {
+    prompt,
+    model_id: modelId,
+    messages: agenticMessages,
+    max_steps: Math.max(1, Math.min(50, maxSteps)),
+    timeout: Math.max(10, Math.min(300, timeout)),
+  };
+  if (toolNames) body.tool_names = toolNames;
+  try {
+    const r = await fetch(API + "/agent/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setOutput("output_agentic", data.error || r.statusText, "error");
+      appendTerminalLine("Agentic (error)", "fail");
+      appendTerminalJson(data);
+      return;
+    }
+    agenticMessages = data.messages || [];
+    agenticThinking = data.thinking || "";
+    agenticLastToolCalls = data.tool_calls || [];
+    renderAgenticConversation();
+    setOutput("output_agentic", data.response ?? "", "", data.thinking ?? "");
+    addTerminalResponseToHistory(data.response ?? "", data.thinking ?? "", "Agentic (" + modelId + ")");
+    document.getElementById("prompt_agentic").value = "";
+  } catch (err) {
+    setOutput("output_agentic", err.message || "Network error", "error");
+    appendTerminalLine("Agentic: " + (err.message || "Network error"), "fail");
+  } finally {
+    setLoading("output_agentic", "send_agentic", false);
+  }
+});
+
+document.getElementById("agentic_new_conversation").addEventListener("click", function() {
+  agenticMessages = [];
+  agenticThinking = "";
+  agenticLastToolCalls = [];
+  renderAgenticConversation();
+  document.getElementById("prompt_agentic").value = "";
+  setOutput("output_agentic", "", "empty", "");
+});
+
 document.getElementById("send_template").addEventListener("click", async () => {
   const template = document.getElementById("template_text").value.trim();
   const userInput = document.getElementById("template_user_input").value;

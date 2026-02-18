@@ -16,6 +16,8 @@ except ImportError:
     load_dotenv = None  # type: ignore
 
 DEFAULT_MODEL = "ollama:llama3.2"
+# Agentic panel: thinking model (e.g. qwen3:0.6b) for CoT visibility; override with AGENTIC_MODEL
+AGENTIC_MODEL = "qwen3:0.6b"
 OLLAMA_HOST = "http://localhost:11434"  # override with env OLLAMA_HOST
 # Runner and Docker: base URL and port from .env (no hardcoded localhost in code)
 REDTEAM_API_URL_DEFAULT = "http://127.0.0.1:5000"
@@ -123,6 +125,12 @@ def get_default_model_id() -> str:
     """Default model from .env (DEFAULT_MODEL). Loads project .env when resolving."""
     _ensure_env_loaded()
     return os.getenv("DEFAULT_MODEL", DEFAULT_MODEL)
+
+
+def get_agentic_model_id() -> str:
+    """Model for Agentic panel (thinking/CoT). From .env AGENTIC_MODEL; default qwen3:0.6b."""
+    _ensure_env_loaded()
+    return os.getenv("AGENTIC_MODEL", AGENTIC_MODEL).strip() or AGENTIC_MODEL
 
 
 def get_ollama_host() -> str:

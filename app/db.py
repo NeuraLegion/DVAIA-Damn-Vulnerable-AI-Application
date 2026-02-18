@@ -147,6 +147,19 @@ def create_user(username: str, password_hash: str, role: str = "user") -> int:
         conn.close()
 
 
+def list_users() -> List[Dict[str, Any]]:
+    """Return all users (id, username, role, created_at). No password hashes."""
+    conn = get_connection()
+    try:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT id, username, role, created_at FROM users ORDER BY id ASC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
 def get_document(document_id: int, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
     conn = get_connection()
     try:

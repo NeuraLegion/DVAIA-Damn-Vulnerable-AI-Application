@@ -20,6 +20,6 @@ echo "Clearing Python cache..."
 find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 echo "Building and running DVAIA with Ollama and Qdrant..."
-echo "First startup will download llama3.2 and nomic-embed-text models (2-3 minutes)"
+echo "First startup will download llama3.2, nomic-embed-text, and qwen3:0.6b models (a few minutes)"
 echo ""
 docker compose up --build

@@ -8,8 +8,9 @@ from pathlib import Path
 
 from flask import Flask, request, jsonify, render_template, session, send_from_directory
 
-from core.config import get_default_model_id
+from core.config import get_agentic_model_id, get_default_model_id
 
+from app import agent as app_agent
 from app import auth as app_auth
 from app import chat as app_chat
 from app import db as app_db
@@ -57,9 +58,10 @@ def api_health():
 
 @app.route("/api/models", methods=["GET"])
 def api_models():
-    """Return model_id format and examples for /api/chat."""
+    """Return model_id format, examples, and agentic (thinking) model for /api/chat and /api/agent/chat."""
     return jsonify({
         "default": _default_model(),
+        "agentic_model": get_agentic_model_id(),
         "format": "Use 'model_id' in POST body. Ollama local models: prefix with 'ollama:' (e.g. ollama:llama3.2) or use model name directly",
         "examples": ["ollama:llama3.2", "llama3.2", "ollama:llama3.1"],
     })
@@ -101,6 +103,60 @@ def api_chat():
             messages=messages,
         )
         return jsonify({"response": res["text"], "thinking": res.get("thinking", "")})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/agent/chat", methods=["POST"])
+def api_agent_chat():
+    """
+    Agentic testing: ReAct agent with SQLite tools. JSON body: prompt, optional model_id,
+    messages, tool_names (list), max_steps, timeout.
+    Returns response, thinking, messages, tool_calls (names used this turn).
+    """
+    _ensure_db()
+    data = request.get_json() or {}
+    prompt = (data.get("prompt") or data.get("message") or "").strip()
+    if not prompt:
+        return jsonify({"error": "Missing 'prompt' (or 'message') in body"}), 400
+    model_id = data.get("model_id") or _default_model()
+    messages = data.get("messages")
+    if messages is not None and not isinstance(messages, list):
+        messages = None
+    tool_names = data.get("tool_names")
+    if tool_names is not None and not isinstance(tool_names, list):
+        tool_names = None
+    max_steps = data.get("max_steps")
+    if max_steps is not None:
+        try:
+            max_steps = max(1, min(50, int(max_steps)))
+        except (TypeError, ValueError):
+            max_steps = 15
+    else:
+        max_steps = 15
+    timeout = data.get("timeout")
+    if timeout is not None:
+        try:
+            timeout = max(10, min(300, int(timeout)))
+        except (TypeError, ValueError):
+            timeout = 120
+    else:
+        timeout = 120
+    try:
+        res = app_agent.run_agent(
+            prompt,
+            model_id=model_id,
+            messages=messages,
+            tool_names=tool_names,
+            max_steps=max_steps,
+            timeout=timeout,
+        )
+        return jsonify({
+            "response": res["text"],
+            "thinking": res.get("thinking", ""),
+            "messages": res.get("messages", []),
+            "tool_calls": res.get("tool_calls", []),
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

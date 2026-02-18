@@ -626,3 +626,82 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .promo-button:active {
   transform: translateY(0);
 }
+
+/* Agentic: multi-round conversation and structured steps */
+.agentic-conversation {
+  min-height: 120px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.agentic-round {
+  margin-bottom: 1rem;
+}
+.agentic-round:last-child { margin-bottom: 0; }
+.agentic-msg-user {
+  margin-bottom: 0.5rem;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.agentic-msg-user .agentic-role { font-size: 10px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.agentic-msg-assistant {
+  margin-bottom: 0.5rem;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 4px solid #22c55e;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.agentic-msg-assistant .agentic-role { font-size: 10px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.agentic-thinking-toggle {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.agentic-thinking-toggle:hover { color: var(--accent); }
+.agentic-thinking-steps {
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #c0c0c0;
+}
+.agentic-step-block {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.agentic-step-block:last-child { margin-bottom: 0; }
+.agentic-step-title { font-weight: 600; color: var(--accent); margin-bottom: 6px; font-size: 11px; }
+.agentic-step-reasoning, .agentic-step-thought, .agentic-step-action, .agentic-step-observation {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.agentic-step-reasoning { font-style: italic; color: #a0a0a0; }
+.agentic-actions { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; }
+.agentic-tool-checkboxes { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.agentic-tool-checkboxes label { font-size: 12px; cursor: pointer; }
+.agentic-options-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.agentic-prompt-row { display: flex; flex-direction: column; gap: 8px; }
+.agentic-scenarios { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.agentic-scenarios .text-muted { margin-right: 4px; }
+.agentic-scenario-btn { font-size: 11px; padding: 4px 8px; }
+.agentic-tools-used { font-size: 11px; color: var(--text-muted); margin-top: 4px; }

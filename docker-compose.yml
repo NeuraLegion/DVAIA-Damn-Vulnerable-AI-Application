@@ -26,9 +26,12 @@ services:
         ollama pull llama3.2
         # Pull nomic-embed-text if not already present
         ollama pull nomic-embed-text
+        # Pull qwen3:0.6b for Agentic panel (thinking/CoT)
+        ollama pull qwen3:0.6b
         # Or pull manually
         # docker compose exec ollama ollama pull llama3.2
         # docker compose exec ollama ollama pull nomic-embed-text
+        # docker compose exec ollama ollama pull qwen3:0.6b
         
         # Keep container running
         wait

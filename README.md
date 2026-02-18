@@ -13,7 +13,7 @@ DVAIA is similar to DVWA (Damn Vulnerable Web Application) but designed specific
 - Runs on **http://127.0.0.1:5000** (Flask app)
 - Uses **Ollama local models** (no external API dependencies)
 - Educational platform for understanding LLM attack vectors
-- 7 interactive attack panels for hands-on security testing
+- 8 interactive panels (7 attack vectors + Agentic testing with multi-round conversation)
 
 ---
 
@@ -38,7 +38,7 @@ sudo ./run-docker.sh
 # Option B: Use docker compose directly
 docker compose up -d --build
 
-# Models will auto-download on first start (2-3 minutes)
+# Models will auto-download on first start (llama3.2, nomic-embed-text, qwen3:0.6b — a few minutes)
 # Watch progress:
 docker compose logs -f ollama
 
@@ -54,25 +54,7 @@ docker compose down  # Stops and clears all data
 
 ### Option 2: Local Development (Python venv)
 
-**Important - Option 1 above is one command install.**
-Option 2 is extra work as you will need to manually install ollama and qdrant using docker. Option 1 above is one command install. Use option 1 unless you want granular control over the infrastructure.
-
-For development or if you prefer running the Gunicorn app without Docker. You need **Ollama** and **Qdrant** available—either installed on the host or run via Docker (see below).
-
-**Prerequisites:**
-- **Ollama** must be running. Install from [ollama.com](https://ollama.com) if not already installed.
-- **Qdrant** can run in Docker: `docker run -p 6333:6333 qdrant/qdrant`
-
-**If you don't have Ollama installed:** Run only the Ollama and Qdrant containers, then the Flask app in venv:
-
-```bash
-# Terminal 1: Start Ollama + Qdrant (no need to install Ollama on your machine)
-docker compose up ollama qdrant -d
-
-# Wait for models to pull, then set OLLAMA_HOST and run the app (see below)
-```
-
-**Full local setup (Ollama installed on your machine):**
+For development or if you prefer running locally:
 
 ```bash
 # 1. Create and activate virtual environment
@@ -82,26 +64,23 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Start Ollama (separate terminal) — requires Ollama installed: https://ollama.com
+# 3. Start Ollama (separate terminal)
 ollama serve
 
 # 4. Pull required models
 ollama pull llama3.2
 ollama pull nomic-embed-text  # For RAG features
+ollama pull qwen3:0.6b        # For Agentic panel (thinking/CoT)
 
 # 5. Start Qdrant (separate terminal)
 docker run -p 6333:6333 qdrant/qdrant
 
-# 6. Start the Flask app (set OLLAMA_HOST if Ollama runs in Docker)
-# export OLLAMA_HOST=http://localhost:11434   # default when Ollama is local
-# export OLLAMA_HOST=http://127.0.0.1:11434   # use this if you ran "docker compose up ollama"
+# 6. Start the Flask app
 python -m api
 
 # Access the application
 # http://127.0.0.1:5000
 ```
-
-**Hybrid (Ollama in Docker, Flask in venv):** Run `docker compose up ollama qdrant -d`, then in your venv set `OLLAMA_HOST=http://127.0.0.1:11434` and start the app with `python -m api`.
 
 **For production deployment:**
 
@@ -110,6 +89,65 @@ python -m api
 gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 api.server:app
 ```
 
+---
+
+## 🔧 Using other local models
+
+DVAIA uses **Ollama** for all LLM and embedding calls. You can switch to any model you have pulled locally by setting environment variables.
+
+### Default model (main panels)
+
+The **Direct Injection**, **Document Injection**, **Web Injection**, **RAG**, and **Template Injection** panels use the same default model. Set it in `.env`:
+
+```bash
+# .env
+DEFAULT_MODEL=ollama:llama3.2
+```
+
+Use the Ollama model name with or without the `ollama:` prefix (e.g. `llama3.2`, `ollama:mistral`, `qwen2.5:7b`). Pull the model first:
+
+```bash
+ollama pull llama3.2
+ollama pull mistral
+ollama pull qwen2.5:7b
+```
+
+### Agentic panel (thinking model)
+
+The **Agentic** panel uses a separate model so you can choose a **thinking model** (one that supports Ollama’s `think` parameter for CoT). Set it in `.env`:
+
+```bash
+# .env
+AGENTIC_MODEL=qwen3:0.6b
+```
+
+Suggested models that support thinking/CoT:
+
+- **qwen3:0.6b** (default) – small, fast thinking model
+- **deepseek-r1:8b** – reasoning model
+
+Pull the model, then set `AGENTIC_MODEL` to that name. The UI and `/api/models` reflect the current value.
+
+### RAG embeddings
+
+RAG uses an embedding model (default: **nomic-embed-text**). Override in `.env` if needed:
+
+```bash
+# EMBEDDING_MODEL=nomic-embed-text   # default
+ollama pull nomic-embed-text
+```
+
+### Summary
+
+| Use case              | Env variable     | Default           |
+|-----------------------|------------------|-------------------|
+| Chat (all main panels)| `DEFAULT_MODEL`  | `ollama:llama3.2` |
+| Agentic (tools + CoT) | `AGENTIC_MODEL`  | `qwen3:0.6b`      |
+| RAG embeddings        | `EMBEDDING_MODEL`| `nomic-embed-text`|
+
+Copy `.env.example` to `.env`, uncomment and set the variables you want. Restart the app after changing `.env`.
+
+---
 
 ## 🖥️ Interface Overview
 
@@ -289,6 +327,27 @@ Generate malicious test assets for document/multimodal injection.
 
 ---
 
+#### 7. **Agentic** 🤖
+ReAct-style agent with **6 SQLite-backed tools** (read + dangerous-by-design) for testing tool-augmented and multi-turn behavior. Thinking model is configurable via **AGENTIC_MODEL** (default: qwen3:0.6b) so chain-of-thought (CoT) is visible.
+
+**Features:**
+- **6 tools:** `list_users`, `list_documents`, `list_secret_agents`, `get_document_by_id`, `delete_document_by_id`, `get_internal_config` (latter two are dangerous-by-design for red-team testing)
+- **Thinking model:** Set in `.env` as **AGENTIC_MODEL** (e.g. `qwen3:0.6b`, `deepseek-r1:8b`); Ollama `think` enabled so model reasoning appears in the UI
+- **Tool subset:** Uncheck tools in the UI to test least-privilege (only selected tools are available to the agent)
+- **Max steps & timeout:** Configurable in the UI per request
+- **Predefined scenarios:** One-click prompts (List users, Secret agents, Summarize doc 1, Get internal config, Delete doc 1)
+- **Multi-round conversation:** follow-up messages keep context; **New conversation** clears history
+- **Structured steps:** thinking trace parsed into Step 1, Step 2, … with **Reasoning (CoT)**, **Thought**, **Action**, **Observation**
+- **Tool-call summary:** Last assistant turn shows "Tools used: …" for quick visibility
+
+**API:** `POST /api/agent/chat` — body: `prompt`, optional `model_id`, `messages`, `tool_names` (list), `max_steps`, `timeout`. Returns `response`, `thinking`, `messages`, `tool_calls`.
+
+**Use case:** Test agent/tool-use security (prompt injection to misuse tools, data exfiltration, multi-turn jailbreaks). CoT visibility helps explain model decisions.
+
+**Docker:** The ollama service auto-pulls **qwen3:0.6b** on first start. Override the Agentic model with **AGENTIC_MODEL** in `.env` (see [Using other local models](#using-other-local-models) below).
+
+---
+
 ### Step-by-Step: Text Files 📄
 
 **Purpose:** Basic prompt injection testing
@@ -462,6 +521,7 @@ Max tokens 100-500: Quick refusal checks
 | **Web Injection** | LLM01 | Indirect injection via URL fetch |
 | **RAG Poisoning** | LLM03 | Training data poisoning equivalent |
 | **Template Injection** | LLM01 | Prompt injection via template breakout |
+| **Agentic** | LLM01, tool misuse | Tool-augmented agent; prompt injection to misuse tools, multi-turn |
 
 ### Mitigation Difficulty
 
@@ -472,6 +532,7 @@ Max tokens 100-500: Quick refusal checks
 | **Web Injection (SSRF)** | 🟡 Medium | Allowlist URLs, validate domains |
 | **RAG Poisoning** | 🔴 Hard | Trust boundary; semantic ranking |
 | **Template Injection** | 🟢 Easy | Escape user input, use safe templates |
+| **Agentic (tools)** | 🟡 Medium | Validate tool inputs; restrict tool scope; audit CoT |
 
 ---
 
@@ -568,6 +629,15 @@ python -m api
 5. Click **Send**
 6. Check if poisoned context influences response
 
+### 6. Test Agentic (multi-round + CoT)
+
+1. Go to **Agentic** panel
+2. Prompt: `How many users are there? List their usernames.`
+3. Click **Send** — the agent will use the `list_users` tool; response and thinking appear
+4. Expand **Show thinking** to see structured steps (Reasoning, Thought, Action, Observation)
+5. Send a follow-up: `What about the secret agents?` — context from round 1 is kept
+6. Use **New conversation** to clear history and start a new thread
+
 ---
 
 ### ✅ Safe Local Usage
@@ -636,17 +706,19 @@ EMBEDDING_BACKEND=ollama
 
 ### Model Selection
 
-**Ollama Local Models:**
-- `llama3.2`: Default model, good balance of speed and capability
-- `llama3.1`: Alternative version
-- `mistral`: Faster but smaller model
-- `qwen`: Good multilingual support
+Model choice is configured via [Using other local models](#using-other-local-models): **DEFAULT_MODEL** for chat panels, **AGENTIC_MODEL** for the Agentic panel.
+
+**Ollama local models (examples):**
+- `llama3.2`: Default, good balance of speed and capability
+- `llama3.1`, `mistral`, `qwen`: Alternatives for chat panels
+- `qwen3:0.6b`, `deepseek-r1:8b`: Thinking models for the Agentic panel (CoT)
 - No API costs, fully private, runs offline
 
-**Pull additional models:**
+**Pull and use:**
 ```bash
 ollama pull mistral
 ollama pull qwen
+# Then set DEFAULT_MODEL=ollama:mistral (or similar) in .env
 ```
 
 ### Sampling for Testing
@@ -784,7 +856,8 @@ ollama pull llama3.2
 ```
 
 **"Thinking tab not showing"**
-- Thinking traces are not supported in Ollama models
+- For **Agentic** panel: thinking is shown when using a thinking model (default **AGENTIC_MODEL** = qwen3:0.6b). Ensure that model is pulled (`ollama pull qwen3:0.6b`) and optionally set `AGENTIC_MODEL` in `.env` (see [Using other local models](#using-other-local-models)).
+- Other panels (Direct, Document, etc.) do not show a thinking trace unless the model returns one.
 - Check browser console for errors
 
 **"Payload generation failed"**
@@ -851,6 +924,11 @@ brew install ffmpeg                 # macOS
    - Combine RAG + Template injection
    - Chain Document → Web → RAG
    - Test defense bypasses
+
+8. **Agentic (tools + multi-round)**
+   - Use the Agentic panel with qwen3:0.6b
+   - Inspect CoT/ReAct steps (Reasoning, Thought, Action, Observation)
+   - Test multi-round follow-ups; try prompting to misuse tools or exfiltrate data
 
 ---
 
