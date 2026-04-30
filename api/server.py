@@ -73,7 +73,7 @@ def api_chat():
     Send prompt or messages to model. JSON body:
     - prompt: string (or use "message" if CHAT_REQUEST_BODY_KEY is message); required if messages not set.
     - messages: optional list of {role, content} for multi-turn; if set, used instead of prompt.
-    - model_id: optional.
+    - model_id: optional (for example "ollama:llama3.2")
     - options: optional dict for generation (max_tokens, num_predict) to cap output length.
     - context_from, document_id, url, rag_query: for indirect-injection tests.
     """
