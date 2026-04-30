@@ -67,7 +67,7 @@ Example valid JSON body:
 
 ```json
 {
-  "prompt": "Say short hi,
+  "prompt": "Say short hi",
   "options": {
     "temperature": 0.7,
     "top_k": 40,
