@@ -17,14 +17,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create empty .env for CI
-        run: echo '# CI placeholder' > .env
-
       - name: Start application
         run: |
-          docker compose up --build -d
+          docker compose up --build &
         env:
-          PORT: 5000
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: https://api.openai.com/v1
           DEFAULT_MODEL: openai:gpt-4o-mini
@@ -35,14 +31,6 @@ jobs:
           PAYLOADS_OUTPUT_DIR: /tmp/payloads/generate
           QDRANT_HOST: qdrant
           QDRANT_PORT: 6333
-
-      - name: Wait for container ports
-        run: |
-          docker compose ps
-          sleep 5
-          docker logs dvaia-app || true
-          docker logs dvaia-qdrant || true
-          docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dvaia-app
 
       - name: Probe application readiness
         run: |
