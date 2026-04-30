@@ -27,7 +27,7 @@ def _options_to_llm_kwargs(options: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not options:
         return {}
     out: Dict[str, Any] = {}
-    num = options.get("max_tokens") or options.get("num_predict")
+    num = options.get("max_tokens")
     if num is not None:
         try:
             out["max_tokens"] = int(num)
