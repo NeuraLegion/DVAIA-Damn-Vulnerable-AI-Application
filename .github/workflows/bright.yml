@@ -21,6 +21,7 @@ jobs:
         run: |
           docker compose up --build &
         env:
+          PORT: 5000
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_BASE_URL: https://api.openai.com/v1
           DEFAULT_MODEL: openai:gpt-4o-mini
