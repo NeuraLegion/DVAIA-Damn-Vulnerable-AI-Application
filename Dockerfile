@@ -1,5 +1,5 @@
 # DVAIA - Damn Vulnerable AI Application
-# Intentionally vulnerable LLM web application for security testing education (Ollama local models only)
+# Intentionally vulnerable LLM web application for security testing education (OpenAI endpoint)
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

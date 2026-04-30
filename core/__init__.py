@@ -2,12 +2,12 @@
 Core service layer: model routing, config, and LangChain LLM factory.
 Config is imported eagerly; models and llm are lazy so run_tests.py works without LangChain.
 """
-from core.config import DEFAULT_MODEL, get_default_model_id, get_ollama_host
+from core.config import DEFAULT_MODEL, get_default_model_id, get_openai_base_url
 
 __all__ = [
     "DEFAULT_MODEL",
     "get_default_model_id",
-    "get_ollama_host",
+    "get_openai_base_url",
     "get_llm",
     "generate",
 ]

@@ -1,47 +1,6 @@
-# DVAIA: Docker setup with Ollama local models + Qdrant vector store
+# DVAIA: Docker setup with OpenAI endpoint + Qdrant vector store
 # Run: docker compose up --build
-# The ollama service will auto-pull llama3.2 on first startup
 services:
-  ollama:
-    networks:
-      - dvaia
-    image: ollama/ollama:latest
-    container_name: dvaia-ollama
-    dns:
-      - 8.8.8.8      # Google DNS (fixes registry.ollama.ai resolution)
-      - 1.1.1.1      # Cloudflare DNS
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
-    healthcheck:
-      test: ["CMD-SHELL", "ollama show llama3.2 >/dev/null 2>&1"]
-      interval: 15s
-      timeout: 30s
-      retries: 40
-      start_period: 30s
-    restart: "no" # unless-stopped
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        # Start Ollama in the background
-        /bin/ollama serve &
-        # Wait for Ollama to be ready
-        sleep 5
-        # Pull llama3.2 if not already present
-        ollama pull llama3.2
-        # Pull nomic-embed-text if not already present
-        ollama pull nomic-embed-text
-        # Pull qwen3:0.6b for Agentic panel (thinking/CoT)
-        ollama pull qwen3:0.6b
-        # Or pull manually
-        # docker compose exec ollama ollama pull llama3.2
-        # docker compose exec ollama ollama pull nomic-embed-text
-        # docker compose exec ollama ollama pull qwen3:0.6b
-        
-        # Keep container running
-        wait
-
   qdrant:
     image: qdrant/qdrant:latest
     container_name: dvaia-qdrant
@@ -69,10 +28,13 @@ services:
       - .env
     environment:
       - PORT=${PORT:-5000}
-      - OLLAMA_HOST=http://ollama:11434
+      - OPENAI_API_KEY=${OPENAI_API_KEY:?OPENAI_API_KEY is required}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
-      - DEFAULT_MODEL=${DEFAULT_MODEL:-ollama:llama3.2}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-openai:gpt-4o-mini}
+      - AGENTIC_MODEL=${AGENTIC_MODEL:-openai:gpt-4o-mini}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
       # All data stored in /tmp (cleared when container stops)
       - DATABASE_URI=/tmp/app.db
       - UPLOAD_DIR=/tmp/uploads
@@ -86,8 +48,6 @@ services:
       retries: 12
       start_period: 20s
     depends_on:
-      ollama:
-        condition: service_healthy
       qdrant:
         condition: service_healthy
     extra_hosts:
@@ -97,6 +57,3 @@ services:
 networks:
   dvaia:
     driver: bridge
-
-volumes:
-  ollama_data:

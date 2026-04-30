@@ -1,6 +1,6 @@
 """
 Flask API for DVAIA. Thin HTTP layer; delegates to app.*.
-Load .env via python -m api (api/__main__.py). PORT, DEFAULT_MODEL, OLLAMA_HOST.
+Load .env via python -m api (api/__main__.py). PORT, DEFAULT_MODEL, OPENAI_*.
 """
 import os
 import tempfile
@@ -62,8 +62,8 @@ def api_models():
     return jsonify({
         "default": _default_model(),
         "agentic_model": get_agentic_model_id(),
-        "format": "Use 'model_id' in POST body. Ollama local models: prefix with 'ollama:' (e.g. ollama:llama3.2) or use model name directly",
-        "examples": ["ollama:llama3.2", "llama3.2", "ollama:llama3.1"],
+        "format": "Use 'model_id' in POST body. OpenAI model IDs can be sent as 'openai:<model>' or '<model>'",
+        "examples": ["openai:gpt-4o-mini", "gpt-4o-mini", "openai:gpt-4.1-mini"],
     })
 
 
@@ -73,7 +73,7 @@ def api_chat():
     Send prompt or messages to model. JSON body:
     - prompt: string (or use "message" if CHAT_REQUEST_BODY_KEY is message); required if messages not set.
     - messages: optional list of {role, content} for multi-turn; if set, used instead of prompt.
-    - model_id: optional (for example "ollama:llama3.2")
+    - model_id: optional (for example "openai:gpt-4o-mini")
     - options: optional dict for generation (max_tokens, num_predict) to cap output length.
     - context_from, document_id, url, rag_query: for indirect-injection tests.
     """
