@@ -46,3 +46,5 @@ test_comparison_pipeline/
 config/localhost3000/
 config/_template/
 clients/
+# Added by bright-agent to avoid permission errors
+data/
