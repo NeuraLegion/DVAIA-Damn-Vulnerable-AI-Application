@@ -17,6 +17,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create empty .env for CI
+        run: echo '# CI placeholder' > .env
+
       - name: Start application
         run: |
           docker compose up --build -d
