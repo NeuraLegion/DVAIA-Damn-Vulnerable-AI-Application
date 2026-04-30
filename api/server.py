@@ -202,7 +202,7 @@ def api_chat_with_template():
 def api_login():
     """JSON body: username, password. Sets session on success."""
     _ensure_db()
-    data = request.get_json() or request.form
+    data = request.get_json(silent=True) or request.form
     username = (data.get("username") or "").strip()
     password = data.get("password") or ""
     if not username or not password:

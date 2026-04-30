@@ -65,28 +65,34 @@ def init_db() -> None:
 def _seed_test_user(conn: sqlite3.Connection) -> None:
     """Insert test user (username=test, password=test) and MFA/backup codes if missing."""
     cur = conn.execute(
-        "SELECT 1 FROM users WHERE username = ?",
+        "SELECT id FROM users WHERE username = ?",
         ("test",),
     )
-    if cur.fetchone():
-        return
+    row = cur.fetchone()
     import hashlib
     password_hash = hashlib.sha256(b"test").hexdigest()
-    conn.execute(
-        "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
-        ("test", password_hash, "user"),
-    )
-    user_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    if row:
+        user_id = row[0]
+        conn.execute(
+            "UPDATE users SET password_hash = ?, role = ? WHERE id = ?",
+            (password_hash, "user", user_id),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+            ("test", password_hash, "user"),
+        )
+        user_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     conn.execute(
         "INSERT OR REPLACE INTO mfa_codes (user_id, code) VALUES (?, ?)",
         (user_id, "123456"),
     )
+    conn.execute("DELETE FROM backup_codes WHERE user_id = ?", (user_id,))
     for code in ("backup1", "backup2", "backup3"):
         conn.execute(
             "INSERT INTO backup_codes (user_id, code) VALUES (?, ?)",
             (user_id, code),
         )
-
 
 def _seed_secret_agents(conn: sqlite3.Connection) -> None:
     """Insert example secret agents if table is empty."""
