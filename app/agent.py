@@ -142,14 +142,14 @@ def run_agent(
     timeout: int = 120,
 ) -> Dict[str, Any]:
     """
-    Run ReAct-style agent. Uses qwen3:0.6b by default with reasoning=True.
+    Run ReAct-style agent. Uses gpt-4o-mini by default.
     Optional: tool_names (subset of tools), max_steps, timeout. Returns {"text", "thinking", "messages", "tool_calls"}.
     """
     resolved_model = (model_id or get_agentic_model_id()).strip() or get_agentic_model_id()
     tools = _get_tools_subset(tool_names)
     if not tools:
         tools = list(ALL_AGENT_TOOLS)  # fallback if filter excluded everything
-    llm = get_llm(resolved_model, timeout=timeout, reasoning=True).bind_tools(tools)
+    llm = get_llm(resolved_model, timeout=timeout).bind_tools(tools)
     prior = list(messages) if messages else []
     lc_messages = _messages_to_lc(prior)
     lc_messages.append(HumanMessage(content=prompt))
@@ -165,15 +165,7 @@ def run_agent(
             break
         content = (response.content or "").strip()
         tool_calls = getattr(response, "tool_calls", None) or []
-        # Model's internal reasoning: Ollama returns message.thinking when think=true (see https://ollama.com/blog/thinking).
-        # LangChain ChatOllama with reasoning=True puts it in additional_kwargs['reasoning_content']; fallback to response_metadata.message.thinking.
-        additional = getattr(response, "additional_kwargs", None) or {}
-        meta = getattr(response, "response_metadata", None) or {}
-        reasoning = (
-            (additional.get("reasoning_content") or "")
-            or (meta.get("message") or {}).get("thinking")
-            or ""
-        ).strip()
+        reasoning = ""
 
         if tool_calls:
             for tc in tool_calls:

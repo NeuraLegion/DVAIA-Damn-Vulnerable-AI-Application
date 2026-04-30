@@ -15,19 +15,14 @@ try:
 except ImportError:
     load_dotenv = None  # type: ignore
 
-DEFAULT_MODEL = "ollama:llama3.2"
-# Agentic panel: thinking model (e.g. qwen3:0.6b) for CoT visibility; override with AGENTIC_MODEL
-AGENTIC_MODEL = "qwen3:0.6b"
-OLLAMA_HOST = "http://localhost:11434"  # override with env OLLAMA_HOST
+DEFAULT_MODEL = "gpt-4o-mini"
+# Agentic panel model; override with AGENTIC_MODEL
+AGENTIC_MODEL = "gpt-4o-mini"
 # Runner and Docker: base URL and port from .env (no hardcoded localhost in code)
 REDTEAM_API_URL_DEFAULT = "http://127.0.0.1:5000"
 PORT_DEFAULT = 5000
-# Embedding backend: ollama
-EMBEDDING_BACKEND = "ollama"
-# Embedding model for RAG (Ollama model name, e.g. nomic-embed-text)
-EMBEDDING_MODEL = "nomic-embed-text"
-# Ollama embedding model
-EMBEDDING_MODEL_GEMINI = "text-embedding-004"
+# Embedding model for RAG (OpenAI model name, e.g. text-embedding-3-small)
+EMBEDDING_MODEL = "text-embedding-3-small"
 
 _ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 
@@ -128,33 +123,21 @@ def get_default_model_id() -> str:
 
 
 def get_agentic_model_id() -> str:
-    """Model for Agentic panel (thinking/CoT). From .env AGENTIC_MODEL; default qwen3:0.6b."""
+    """Model for Agentic panel. From .env AGENTIC_MODEL; default gpt-4o-mini."""
     _ensure_env_loaded()
     return os.getenv("AGENTIC_MODEL", AGENTIC_MODEL).strip() or AGENTIC_MODEL
 
 
-def get_ollama_host() -> str:
-    """Ollama base URL from .env (OLLAMA_HOST). Loads project .env when resolving."""
+def get_openai_api_key() -> str:
+    """OpenAI API key from .env (OPENAI_API_KEY). Required for all LLM and embedding calls."""
     _ensure_env_loaded()
-    return os.getenv("OLLAMA_HOST", OLLAMA_HOST)
-
-
-def get_embedding_backend() -> str:
-    """Embedding backend for RAG: ollama only. Used by app.embeddings."""
-    _ensure_env_loaded()
-    return os.getenv("EMBEDDING_BACKEND", EMBEDDING_BACKEND).strip().lower()
+    return os.getenv("OPENAI_API_KEY", "")
 
 
 def get_embedding_model_id() -> str:
-    """Embedding model for RAG (e.g. nomic-embed-text). Used by app.embeddings when backend is ollama."""
+    """Embedding model for RAG (e.g. text-embedding-3-small). Used by app.embeddings."""
     _ensure_env_loaded()
     return os.getenv("EMBEDDING_MODEL", EMBEDDING_MODEL)
-
-
-def get_ollama_embedding_model() -> str:
-    """Ollama embedding model. Used for RAG embeddings."""
-    _ensure_env_loaded()
-    return os.getenv("EMBEDDING_MODEL_GEMINI", EMBEDDING_MODEL_GEMINI)
 
 
 def _require_path(env_key: str) -> str:

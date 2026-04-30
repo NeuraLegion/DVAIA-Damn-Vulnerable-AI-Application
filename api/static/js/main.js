@@ -300,7 +300,7 @@ document.getElementById("form_mfa").addEventListener("submit", async (e) => {
 });
 
 function getDirectModelId() {
-  return "ollama:llama3.2";
+  return "gpt-4o-mini";
 }
 
 function getDirectSamplingOptions() {

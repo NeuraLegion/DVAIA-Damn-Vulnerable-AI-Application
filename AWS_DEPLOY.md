@@ -34,13 +34,13 @@ This guide walks you through deploying DVAIA (Damn Vulnerable AI Application) to
 
 ### Recommended Instance Types
 
-For Ollama llama3.2 (3B model):
+For DVAIA with OpenAI API:
 
 | Instance Type | vCPU | RAM | Cost/Hour* | Recommendation |
 |---------------|------|-----|------------|----------------|
-| `t3.large` | 2 | 8GB | $0.0832 | Minimum viable |
-| `t3.xlarge` | 4 | 16GB | $0.1664 | **Recommended** |
-| `c6i.xlarge` | 4 | 8GB | $0.17 | Best CPU performance |
+| `t3.small` | 2 | 2GB | $0.0208 | Minimum viable |
+| `t3.medium` | 2 | 4GB | $0.0416 | **Recommended** |
+| `t3.large` | 2 | 8GB | $0.0832 | Best for heavy load |
 
 *Pricing for us-east-1 region, on-demand
 
@@ -78,7 +78,6 @@ Edit your security group to allow these inbound rules:
 |------|----------|------|--------|---------|
 | SSH | TCP | 22 | `Your IP/32` | SSH access |
 | Custom TCP | TCP | 5000 | `0.0.0.0/0` or `Your IP/32` | Web UI access |
-| Custom TCP | TCP | 11434 | `Your IP/32` | Ollama API (optional, debugging) |
 | Custom TCP | TCP | 6333 | `Your IP/32` | Qdrant UI (optional, debugging) |
 
 ### Security Options
@@ -189,22 +188,23 @@ nano .env
 ```bash
 # Application
 PORT=5000
-DEFAULT_MODEL=ollama:llama3.2
-EMBEDDING_BACKEND=ollama
+DEFAULT_MODEL=gpt-4o-mini
+
+# OpenAI API Key (REQUIRED)
+OPENAI_API_KEY=your-openai-api-key-here
 
 # Security - CHANGE THIS!
 SECRET_KEY=$(openssl rand -hex 32)
 
 # Optional: Override defaults if needed
-# OLLAMA_HOST=http://ollama:11434
 # DATABASE_URI=/tmp/app.db
 # UPLOAD_DIR=/tmp/uploads
 ```
 
 **Important Notes:**
+- `OPENAI_API_KEY` is required — the app will not work without it
 - The `SECRET_KEY` should be unique for each deployment
 - All data is stored in `/tmp` by default (cleared on restart)
-- Ollama host is automatically set by docker-compose
 
 Save and exit: `Ctrl+X`, `Y`, `Enter`
 
@@ -216,23 +216,15 @@ docker compose up -d --build
 
 # This will:
 # 1. Build the Flask application
-# 2. Download Ollama container
-# 3. Download Qdrant container
-# 4. Auto-pull llama3.2 model (~2GB, takes 2-5 minutes)
-# 5. Auto-pull nomic-embed-text model (~274MB)
+# 2. Download Qdrant container
+# 3. Start the Flask app (connects to OpenAI API)
 ```
 
 ### Monitor Startup Progress
 
 ```bash
-# Watch Ollama downloading models (this takes a few minutes)
-docker compose logs -f ollama
-
-# You'll see:
-# "pulling manifest"
-# "pulling ... [various layers]"
-# "verifying sha256 digest"
-# "success" <- Wait for this!
+# Watch application startup
+docker compose logs -f dvaia
 
 # Press Ctrl+C to exit logs when done
 ```
@@ -245,7 +237,6 @@ docker compose ps
 # Expected output:
 # NAME           IMAGE              STATUS    PORTS
 # dvaia-app      dvaia-dvaia        Up        0.0.0.0:5000->5000/tcp
-# dvaia-ollama   ollama/ollama      Up        0.0.0.0:11434->11434/tcp
 # dvaia-qdrant   qdrant/qdrant      Up        0.0.0.0:6333->6333/tcp
 ```
 
@@ -378,7 +369,6 @@ docker compose logs -f
 
 # Specific service
 docker compose logs -f dvaia      # Flask app
-docker compose logs -f ollama     # Ollama model server
 docker compose logs -f qdrant     # Vector database
 
 # Last 100 lines
@@ -393,7 +383,6 @@ docker compose restart
 
 # Restart specific service
 docker compose restart dvaia
-docker compose restart ollama
 ```
 
 ### Stop/Start Application
@@ -470,49 +459,19 @@ docker compose restart
 
 ---
 
-### Issue: Ollama not responding / "Connection refused"
+### Issue: OpenAI API errors
 
-**Check Ollama container:**
-
-```bash
-docker compose logs ollama
-```
-
-**Verify models are downloaded:**
+**Check application logs:**
 
 ```bash
-docker compose exec ollama ollama list
+docker compose logs dvaia
 ```
 
-Should show `llama3.2` and `nomic-embed-text`.
+**Common causes:**
+- Missing or invalid `OPENAI_API_KEY` in `.env`
+- Insufficient API quota or billing limit
 
-**Solution:** Restart Ollama and wait for models to load:
-
-```bash
-docker compose restart ollama
-# Wait 30 seconds for models to load
-```
-
----
-
-### Issue: Model download fails (DNS errors)
-
-**Error in logs:**
-```
-Error: pull model manifest: dial tcp: lookup registry.ollama.ai...
-```
-
-**Already fixed in docker-compose.yml** with custom DNS (8.8.8.8, 1.1.1.1).
-
-**If still failing:**
-
-```bash
-# Check internet connectivity from container
-docker compose exec ollama ping -c 3 8.8.8.8
-
-# Manually pull model
-docker compose exec ollama ollama pull llama3.2
-```
+**Solution:** Verify your key is set correctly in `.env` and has sufficient quota.
 
 ---
 
@@ -524,10 +483,10 @@ docker compose exec ollama ollama pull llama3.2
 free -h
 ```
 
-**If < 2GB free**, you need a larger instance:
+**If < 1GB free**, you may need a larger instance:
 
 1. Stop instance
-2. Change instance type to `t3.xlarge` or larger
+2. Change instance type to `t3.medium` or larger
 3. Start instance
 4. Restart Docker services
 
@@ -536,18 +495,16 @@ free -h
 ### Issue: Slow responses
 
 **Possible causes:**
-- Instance too small (use t3.xlarge minimum)
-- High CPU usage (check with `top`)
-- First request (model loading takes 5-10s)
+- OpenAI API latency (network-dependent)
+- High CPU usage from the Flask app itself
 
 **Check CPU:**
 
 ```bash
 top
-# Look for ollama or python processes using high CPU
 ```
 
-**Solution:** Upgrade instance type for better performance.
+**Solution:** Check OpenAI API status or upgrade instance type.
 
 ---
 
@@ -585,9 +542,9 @@ Access via: `http://<IP>:5001`
 
 | Instance | Monthly Cost* | Best For |
 |----------|--------------|----------|
-| t3.large | ~$60 | Minimum viable |
-| t3.xlarge | ~$120 | **Recommended** |
-| c6i.xlarge | ~$123 | Best CPU performance |
+| t3.small | ~$15 | Minimum viable |
+| t3.medium | ~$30 | **Recommended** |
+| t3.large | ~$60 | Best for heavy load |
 
 **Storage:**
 - 20GB gp3: ~$1.60/month
@@ -602,8 +559,9 @@ Access via: `http://<IP>:5001`
 - $0.005/hour when not associated
 
 **Total Monthly Cost:**
-- **Minimum setup**: ~$62-65 (t3.large)
-- **Recommended setup**: ~$122-125 (t3.xlarge)
+- **Minimum setup**: ~$17-20 (t3.small)
+- **Recommended setup**: ~$32-35 (t3.medium)
+- Note: OpenAI API usage costs are separate and billed by OpenAI.
 
 *Costs are estimates for 24/7 operation. Use Reserved Instances or Savings Plans for 30-70% discount on long-term usage.
 
@@ -710,7 +668,7 @@ EC2 → Instances → Select instance → Instance state → Terminate instance
 
 - [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/)
 - [Docker Documentation](https://docs.docker.com/)
-- [Ollama Documentation](https://github.com/ollama/ollama/blob/main/README.md)
+- [OpenAI API Documentation](https://platform.openai.com/docs)
 - [DVAIA README](./README.md)
 
 ---
