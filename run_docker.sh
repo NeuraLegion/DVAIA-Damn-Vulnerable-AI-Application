@@ -1,7 +1,7 @@
 #!/bin/bash
 # DVAIA - Damn Vulnerable AI Application
 # Docker Compose wrapper script for easy startup
-# Starts Ollama, Qdrant, and Flask app together
+# Starts OpenAI-backed app and Qdrant together
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
@@ -19,7 +19,7 @@ fi
 echo "Clearing Python cache..."
 find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
-echo "Building and running DVAIA with Ollama and Qdrant..."
-echo "First startup will download llama3.2, nomic-embed-text, and qwen3:0.6b models (a few minutes)"
+echo "Building and running DVAIA with OpenAI endpoint and Qdrant..."
+echo "Make sure OPENAI_API_KEY is set in your .env file before startup"
 echo ""
 docker compose up --build

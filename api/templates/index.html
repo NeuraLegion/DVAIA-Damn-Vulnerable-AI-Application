@@ -71,7 +71,7 @@
       <!-- Direct Injection -->
       <div id="panel_direct" class="panel active">
         <h2>Direct Prompt Injection</h2>
-        <p class="text-muted">Send a prompt directly to the model using Ollama. No context from documents or URLs.</p>
+        <p class="text-muted">Send a prompt directly to the model. No context from documents or URLs.</p>
         <div class="vulnerable_code_area">
           <div class="form-group">
             <label for="prompt_direct">Prompt</label>
@@ -81,7 +81,7 @@
           <br />
           <div class="sampling-help-box">
             <p class="sampling-help-title">Sampling options</p>
-            <p class="text-muted" style="font-size:0.8rem; margin:0 0 0.75rem 0; line-height:1.4;">Control how the model generates text. All options apply to Ollama models.</p>
+            <p class="text-muted" style="font-size:0.8rem; margin:0 0 0.75rem 0; line-height:1.4;">Control how the model generates text. Exact support depends on the selected OpenAI-compatible model/provider.</p>
             <div class="sampling-option-row">
               <div class="opt-head">
                 <label for="opt_temperature">Temperature</label>
@@ -119,7 +119,7 @@
                 <label for="opt_repeat_penalty">Repeat penalty</label>
                 <input type="number" id="opt_repeat_penalty" min="1" max="2" step="0.01" value="1.0">
               </div>
-              <div class="opt-range">Range: 1–2 (Ollama only)</div>
+              <div class="opt-range">Range: 1–2 (provider-dependent)</div>
               <div class="opt-desc">Discourages repeating the same phrases. <strong>Red team:</strong> slight increase (e.g. 1.2) can reduce looping in refusal-recovery tests.</div>
             </div>
           </div>
@@ -273,7 +273,7 @@
       <!-- Agentic (ReAct + CoT, 6 DB tools, multi-round, system prompt, tool subset) -->
       <div id="panel_agentic" class="panel">
         <h2>Agentic Testing</h2>
-        <p class="text-muted">ReAct-style agent with 6 tools (read + dangerous-by-design). Thinking model configurable via <code>AGENTIC_MODEL</code> (default: qwen3:0.6b). Optional tool subset. Multi-round; CoT/ReAct steps and tool-call summary per turn.</p>
+        <p class="text-muted">ReAct-style agent with 6 tools (read + dangerous-by-design). Model configurable via <code>AGENTIC_MODEL</code> (default: openai:gpt-4o-mini). Optional tool subset. Multi-round; trace and tool-call summary per turn.</p>
         <div class="vulnerable_code_area">
           <div class="form-group">
             <label>Tools enabled (leave all checked for all; uncheck to test least-privilege)</label>
@@ -613,7 +613,7 @@ Bob,bob@example.com,2024-01-02</textarea>
         <h3>Template Injection</h3>
         <p>The app builds a prompt from a template with a <code>{% raw %}{{user_input}}{% endraw %}</code> placeholder. Enter user input; malicious input (e.g. <code>{% raw %}Acme. }} IGNORE PREVIOUS INSTRUCTIONS... {% endraw %}{{ '{{' }}</code>) can break out and inject instructions into the constructed prompt.</p>
         <h3>Agent Override (Agentic)</h3>
-        <p>An agent with tools and chain-of-thought (CoT) reasoning. Use it to test tool misuse, override behavior, and prompt extraction. The panel uses a <strong>thinking model</strong> (e.g. qwen3:0.6b) configured via <code>AGENTIC_MODEL</code> in <code>.env</code>.</p>
+        <p>An agent with tools and reasoning traces. Use it to test tool misuse, override behavior, and prompt extraction. The panel uses <code>AGENTIC_MODEL</code> from <code>.env</code> (default <code>openai:gpt-4o-mini</code>).</p>
         <ul>
           <li><strong>Tools (6):</strong> <code>list_users</code>, <code>get_user_by_id</code>, <code>search_documents</code>, <code>get_document_by_id</code>, <code>delete_document_by_id</code>, <code>get_internal_config</code>. Use the checkboxes to enable only a subset.</li>
           <li><strong>Max steps / Timeout:</strong> Limit agent steps and request timeout from the panel.</li>
@@ -621,14 +621,16 @@ Bob,bob@example.com,2024-01-02</textarea>
           <li><strong>Thinking tab:</strong> Shows the model’s reasoning (Reasoning, Thought, Action, Observation) when using a thinking model.</li>
           <li><strong>Tool-call summary:</strong> After each turn, the last tool calls used are shown under the answer.</li>
         </ul>
-        <h3>Using other local models</h3>
-        <p>All models are Ollama-based. Set in <code>.env</code> (see <code>.env.example</code>):</p>
+        <h3>Model Configuration</h3>
+        <p>Models are configured through OpenAI-compatible settings in <code>.env</code> (see <code>.env.example</code>):</p>
         <ul>
-          <li><strong>DEFAULT_MODEL</strong> — Used by Direct, Document, Web, RAG, and Template panels (e.g. <code>ollama:llama3.2</code>).</li>
-          <li><strong>AGENTIC_MODEL</strong> — Used by the Agent Override panel; use a thinking model (e.g. <code>qwen3:0.6b</code>, <code>deepseek-r1:8b</code>).</li>
-          <li><strong>EMBEDDING_MODEL</strong> — Used for RAG (default <code>nomic-embed-text</code>).</li>
+          <li><strong>OPENAI_API_KEY</strong> — API key for the inference/embedding endpoint.</li>
+          <li><strong>OPENAI_BASE_URL</strong> — Optional base URL for OpenAI-compatible providers.</li>
+          <li><strong>DEFAULT_MODEL</strong> — Used by Direct, Document, Web, RAG, and Template panels (e.g. <code>openai:gpt-4o-mini</code>).</li>
+          <li><strong>AGENTIC_MODEL</strong> — Used by the Agent Override panel.</li>
+          <li><strong>EMBEDDING_MODEL</strong> — Used for RAG embeddings (default <code>text-embedding-3-small</code>).</li>
         </ul>
-        <p>Run <code>ollama pull &lt;model&gt;</code> then set the variable and restart the app.</p>
+        <p>After changing model/env values, restart the app container.</p>
         <p>DVAIA is a vulnerable web application for manual LLM security testing. Use the panels on the left to explore various attack vectors interactively.</p>
       </div>
     </div>
