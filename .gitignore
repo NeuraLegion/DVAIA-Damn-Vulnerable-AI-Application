@@ -43,6 +43,3 @@ tmp/
 .docker/
 
 # Don't ignore .env.example (this is tracked in git)
-
-# Allow .env in CI
-!/.env
