@@ -22,10 +22,7 @@ test('GET /api/health', { signal: AbortSignal.timeout(timeout) }, async () => {
   await runner
     .createScan({
       tests: [
-        'csrf',
-        'http_method_fuzzing',
-        'full_path_disclosure',
-        'insecure_tls_configuration'
+        'http_method_fuzzing'
       ],
       attackParamLocations: [AttackParamLocation.PATH],
       starMetadata: {

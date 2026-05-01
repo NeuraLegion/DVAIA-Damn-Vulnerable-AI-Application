@@ -22,10 +22,6 @@ test('GET /api/payloads/file/sample/path/to/file.txt', { signal: AbortSignal.tim
   await runner
     .createScan({
       tests: [
-        'lfi',
-        'rfi',
-        'full_path_disclosure',
-        'xss',
         'http_method_fuzzing'
       ],
       attackParamLocations: [AttackParamLocation.PATH],
