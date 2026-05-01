@@ -1,0 +1,26 @@
+flask>=3.0.0
+gunicorn>=21.0.0
+requests
+curl_cffi>=0.7.0
+python-dotenv
+pyyaml
+PyPDF2
+python-docx
+pytesseract
+# LangChain: simple and agentic (tools, RAG, agents)
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+qdrant-client
+# Payload generation
+reportlab
+Pillow
+qrcode
+numpy
+scipy
+# TTS audio generation (requires ffmpeg on PATH for pydub)
+gTTS
+pydub
+# CSV dummy data generation (realistic email, name, date)
+Faker
