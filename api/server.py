@@ -666,4 +666,4 @@ def run_app():
     from core.config import get_port
     _ensure_db()
     port = get_port()
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, options_response=False)
