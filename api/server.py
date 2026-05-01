@@ -659,3 +659,10 @@ def run_app():
     _ensure_db()
     port = get_port()
     app.run(host="0.0.0.0", port=port)
+
+
+# Disable OPTIONS method globally
+@app.before_request
+def block_options_method():
+    if request.method == 'OPTIONS':
+        return jsonify({"error": "Method not allowed"}), 405
