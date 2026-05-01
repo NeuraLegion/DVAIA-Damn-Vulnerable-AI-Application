@@ -44,7 +44,7 @@ def _user_id_from_session():
     return session.get("user_id")
 
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def index():
     """Single-page front end: prompt input and output."""
     return render_template("index.html")
