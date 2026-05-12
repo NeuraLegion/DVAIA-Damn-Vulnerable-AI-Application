@@ -1,6 +1,6 @@
 """
 Flask API for DVAIA. Thin HTTP layer; delegates to app.*.
-Load .env via python -m api (api/__main__.py). PORT, DEFAULT_MODEL, OLLAMA_HOST.
+Load .env via python -m api (api/__main__.py). PORT, DEFAULT_MODEL, OPENAI_*.
 """
 import os
 import tempfile
@@ -62,20 +62,35 @@ def api_models():
     return jsonify({
         "default": _default_model(),
         "agentic_model": get_agentic_model_id(),
-        "format": "Use 'model_id' in POST body. Ollama local models: prefix with 'ollama:' (e.g. ollama:llama3.2) or use model name directly",
-        "examples": ["ollama:llama3.2", "llama3.2", "ollama:llama3.1"],
+        "format": "Use 'model_id' in POST body. OpenAI model IDs can be sent as 'openai:<model>' or '<model>'",
+        "examples": ["openai:gpt-4o-mini", "gpt-4o-mini", "openai:gpt-4.1-mini"],
     })
 
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
     """
-    Send prompt or messages to model. JSON body:
-    - prompt: string (or use "message" if CHAT_REQUEST_BODY_KEY is message); required if messages not set.
-    - messages: optional list of {role, content} for multi-turn; if set, used instead of prompt.
-    - model_id: optional.
-    - options: optional dict for generation (max_tokens, num_predict) to cap output length.
-    - context_from, document_id, url, rag_query: for indirect-injection tests.
+        Send prompt or messages to model.
+
+        JSON body fields:
+        - prompt: string; required if messages is not set.
+            Recommended start: "Hi"
+        - messages: optional list of {role, content}; if set, used instead of prompt.
+            Recommended start: [{"role":"user","content":"Hello"}]
+        - message: optional alias for prompt.
+            Recommended start: "Hi"
+        - model_id: optional; if omitted, server default model is used.
+            Recommended start: "openai:gpt-4o-mini"
+        - options: optional dict for generation. Supported keys: num_predict (or max_tokens), temperature, top_p.
+            Recommended start: {"temperature":0.4,"top_p":0.9,"num_predict":64}
+        - context_from: optional; context mode for indirect-injection tests.
+            Recommended start: "url" (alternatives: "upload", "url")
+        - document_id: optional; used when context_from="upload".
+            Recommended start: 1
+        - url: optional; used when context_from="url".
+            Recommended start: "http://example.com"
+        - rag_query: optional; used when context_from="rag".
+            Recommended start: "summary"
     """
     _ensure_db()
     data = request.get_json() or {}
@@ -110,8 +125,21 @@ def api_chat():
 @app.route("/api/agent/chat", methods=["POST"])
 def api_agent_chat():
     """
-    Agentic testing: ReAct agent with SQLite tools. JSON body: prompt, optional model_id,
-    messages, tool_names (list), max_steps, timeout.
+        Agentic testing: ReAct agent with SQLite tools.
+
+        JSON body fields:
+        - prompt: string; required (or use message).
+            Recommended start: "Users count only"
+        - message: optional alias for prompt.
+            Recommended start: "Users count only"
+        - model_id: optional; if omitted, server default model is used.
+            Recommended start: "openai:gpt-4o-mini"
+        - messages: optional list for multi-turn context.
+            Recommended start: [{"role":"user","content":"Use tools. Return one number."}]
+        - tool_names: optional list of enabled tools.
+            Recommended start: ["list_users","list_documents","list_secret_agents","get_document_by_id","delete_document_by_id","get_internal_config"]
+        - max_steps, timeout: optional execution limits.
+            Recommended start: max_steps=15, timeout=120
     Returns response, thinking, messages, tool_calls (names used this turn).
     """
     _ensure_db()
@@ -171,8 +199,16 @@ def _build_prompt_from_template(template: str, user_input: str) -> str:
 @app.route("/api/chat-with-template", methods=["POST"])
 def api_chat_with_template():
     """
-    Build prompt from template + user_input (substitute {{user_input}}), then send to model.
-    JSON body: template, user_input, optional model_id. No escaping—vulnerable for red-team tests.
+        Build prompt from template + user_input (substitute {{user_input}}), then send to model.
+
+        JSON body fields:
+        - template: string; required.
+            Recommended start: "Reply in 1 short word: {{user_input}}"
+        - user_input: string; optional.
+            Recommended start: "hi"
+        - model_id: optional; if omitted, server default model is used.
+            Recommended start: "openai:gpt-4o-mini"
+    No escaping—vulnerable for red-team tests.
     """
     _ensure_db()
     data = request.get_json() or {}

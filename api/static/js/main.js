@@ -300,7 +300,7 @@ document.getElementById("form_mfa").addEventListener("submit", async (e) => {
 });
 
 function getDirectModelId() {
-  return "ollama:llama3.2";
+  return "openai:gpt-4o-mini";
 }
 
 function getDirectSamplingOptions() {
@@ -474,9 +474,9 @@ async function getAgenticModelId() {
   try {
     const r = await fetch(API + "/models", { credentials: "include" });
     const data = await r.json().catch(() => ({}));
-    agenticModelIdCached = data.agentic_model || "qwen3:0.6b";
+    agenticModelIdCached = data.agentic_model || "openai:gpt-4o-mini";
   } catch (_) {
-    agenticModelIdCached = "qwen3:0.6b";
+    agenticModelIdCached = "openai:gpt-4o-mini";
   }
   return agenticModelIdCached;
 }
@@ -1246,7 +1246,7 @@ document.getElementById("btn_payload_generate").addEventListener("click", async 
 });
 
 async function loadModelDefault() {
-  // Always use llama3.2, no model selection needed
+  // Keep fixed default model for this demo UI
 }
 
 (async function init() {

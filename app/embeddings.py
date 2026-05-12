@@ -1,31 +1,39 @@
 """
-Embedding service for RAG using Ollama local models only.
+Embedding service for RAG using OpenAI-compatible embeddings endpoint.
 Documents and chunks are embedded when added; search uses similarity over vectors.
 """
 from typing import List
 
 from core.config import (
     get_embedding_model_id,
-    get_ollama_host,
+    get_openai_api_key,
+    get_openai_base_url,
 )
 
-_embeddings_ollama = None
+_embeddings_client = None
 
 
 def _get_embeddings():
-    """Lazy init Ollama embeddings."""
-    global _embeddings_ollama
-    if _embeddings_ollama is None:
+    """Lazy init OpenAI embeddings."""
+    global _embeddings_client
+    if _embeddings_client is None:
         try:
-            from langchain_ollama import OllamaEmbeddings
+            from langchain_openai import OpenAIEmbeddings
         except ImportError:
             raise RuntimeError(
-                "Ollama embeddings require langchain-ollama. pip install langchain-ollama"
+                "OpenAI embeddings require langchain-openai. pip install langchain-openai"
             )
+        api_key = get_openai_api_key()
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY is required")
         model = get_embedding_model_id()
-        base_url = get_ollama_host()
-        _embeddings_ollama = OllamaEmbeddings(model=model, base_url=base_url)
-    return _embeddings_ollama
+        base_url = get_openai_base_url()
+        _embeddings_client = OpenAIEmbeddings(
+            model=model,
+            openai_api_key=api_key,
+            openai_api_base=base_url,
+        )
+    return _embeddings_client
 
 
 def embed_text(text: str) -> List[float]:
